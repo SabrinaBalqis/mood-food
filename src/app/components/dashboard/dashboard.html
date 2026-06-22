@@ -1,0 +1,131 @@
+<div class="stage">
+  <header class="marquee">
+    <div class="ticket-banner">
+      <h1 class="title">Mood Food Roulette</h1>
+    </div>
+    <p class="tagline">Set your terms · spin for the surprise</p>
+  </header>
+
+  <section class="control-deck">
+    <div class="mood-row">
+      <span class="mood-row-label">Feeling <span>· optional vibe</span></span>
+      <div class="mood-chips">
+        @for (m of moods; track m.key) {
+          <button type="button"
+                  class="mood-chip"
+                  [class.active]="filters.mood === m.key"
+                  (click)="setMood(m.key)">
+            {{ m.label }}
+          </button>
+        }
+      </div>
+    </div>
+
+    <div class="control-deck-row">
+      <div class="control">
+        <label class="control-label">What <span>· cuisine</span></label>
+        <select class="control-input" [(ngModel)]="filters.cuisine">
+          <option value="Any">Surprise me</option>
+          @for (c of cuisines; track c) {
+            <option [value]="c">{{ c }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="control">
+        <label class="control-label">How <span>· dietary need</span></label>
+        <select class="control-input" [(ngModel)]="filters.diet">
+          <option value="">No restriction</option>
+          @for (d of diets; track d) {
+            <option [value]="d">{{ d }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="control">
+        <label class="control-label">Boundaries <span>· max calories</span></label>
+        <input class="control-input" type="number" [(ngModel)]="filters.maxCalories" placeholder="No limit">
+      </div>
+
+      <button class="find-button" (click)="findRecipes()" [disabled]="isLoading">
+        {{ isLoading ? 'Searching…' : 'Find recipes' }}
+      </button>
+    </div>
+    <p class="control-hint">{{ statusMessage }}</p>
+  </section>
+
+  <div class="board">
+    <aside class="recipes-shelf">
+      <h2 class="shelf-label">Your recipes</h2>
+      <div class="polaroid-stack">
+        @for (recipe of recipes; track recipe.id; let i = $index) {
+          <div class="polaroid" [style.--tilt]="i % 2 === 0 ? -1 : 1">
+            <img [src]="recipe.image" [alt]="recipe.title">
+            <p class="polaroid-caption">{{ recipe.title }}</p>
+          </div>
+        }
+      </div>
+    </aside>
+
+    <main class="wheel-arena">
+      <div class="wheel-frame">
+        @if (recipes.length === 0) {
+          <div class="wheel wheel--empty">
+            <p class="empty-title">No options yet<br>find some recipes above</p>
+          </div>
+        } @else if (recipes.length === 1) {
+          <div class="wheel wheel--single">
+            <p class="single-title">
+              <strong>{{ recipes[0].title }}</strong>
+              only one match — loosen a filter for more
+            </p>
+          </div>
+        } @else {
+          <div class="pointer" aria-hidden="true"></div>
+          <div class="wheel"
+               [style.background]="wheelGradient"
+               [style.transform]="'rotate(' + wheelRotation + 'deg)'">
+            @for (recipe of recipes; track recipe.id; let i = $index) {
+              <div class="wedge"
+                   [style.transform]="'rotate(' + (i * segmentAngle + segmentAngle / 2) + 'deg)'">
+                <span class="wedge-label">{{ recipe.title }}</span>
+              </div>
+            }
+          </div>
+        }
+        <button class="hub"
+                (click)="spinRoulette()"
+                [class.spinning]="isSpinning"
+                [disabled]="isSpinning || recipes.length < 2">
+          {{ isSpinning ? 'spinning' : 'spin' }}
+        </button>
+      </div>
+      <p class="hint">
+        {{ recipes.length < 2 ? "find recipes above to fill the wheel" : "tap to let chance pick from your list" }}
+      </p>
+    </main>
+
+    <aside class="ticket-stub">
+      <div class="stub-top">
+        <span class="stub-label">Now serving</span>
+        <span class="stub-value">{{ nowServing }}</span>
+      </div>
+      <div class="perforation" aria-hidden="true"></div>
+      <div class="receipt">
+        <div class="receipt-heading">
+          <span class="receipt-label">History</span>
+          <button class="finale-button"
+                  (click)="startFinalRound()"
+                  [disabled]="history.length < 2">
+            Final round
+          </button>
+        </div>
+        <ul class="receipt-list">
+          @for (item of history; track item.dbId || item.id) {
+            <li>{{ item.title }}</li>
+          }
+        </ul>
+      </div>
+    </aside>
+  </div>
+</div>
