@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, NgZone } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MoodfoodService, Dish } from '../../services/moodfood';
 
@@ -11,6 +11,7 @@ import { MoodfoodService, Dish } from '../../services/moodfood';
 })
 export class DashboardComponent implements OnInit {
   private moodService = inject(MoodfoodService);
+  private ngZone = inject(NgZone);
 
   // Data
   recipes: Dish[] = [];
@@ -68,7 +69,10 @@ export class DashboardComponent implements OnInit {
     });
 
     // Restore past winners first so History/Final Round work even after a reload.
-    this.history = await this.moodService.getPersistedHistory();
+    const persistedHistory = await this.moodService.getPersistedHistory();
+    this.ngZone.run(() => {
+      this.history = persistedHistory;
+    });
 
     // Load an initial batch so the wheel isn't empty on first paint.
     this.findRecipes();
@@ -95,24 +99,50 @@ export class DashboardComponent implements OnInit {
     this.isFinalRound = false;
 
     this.moodService.getRecipes(this.filters).subscribe({
-      next: async (dishes) => {
-        this.currentSessionId = await this.moodService.logSearch(this.filters);
-        this.recipes = this.currentSessionId
-          ? await this.moodService.saveCandidates(this.currentSessionId, dishes)
-          : dishes;
-
-        this.wheelRotation = 0;
-        this.statusMessage = dishes.length
-          ? `${dishes.length} dish${dishes.length > 1 ? 'es' : ''} loaded — give the wheel a spin!`
-          : 'No matches for that combination — try loosening a filter.';
-        this.isLoading = false;
-      },
+      next: (dishes) => this.handleRecipesLoaded(dishes),
       error: () => {
         this.recipes = [];
         this.statusMessage = 'Something went wrong fetching recipes — try again.';
         this.isLoading = false;
       }
     });
+  }
+
+  // Separated out so the Supabase persistence step can fail safely without ever
+  // leaving isLoading stuck true or the recipe list silently stale.
+  private async handleRecipesLoaded(dishes: Dish[]) {
+    try {
+      const sessionId = await this.moodService.logSearch(this.filters);
+      const saved = sessionId
+        ? await this.moodService.saveCandidates(sessionId, dishes)
+        : dishes;
+
+      // Supabase's calls use fetch under the hood, which doesn't always get
+      // picked up by Angular's automatic change detection - so we tell it
+      // explicitly to re-check the view right here, rather than waiting for
+      // some unrelated event (like a tab switch) to trigger it by accident.
+      this.ngZone.run(() => {
+        this.currentSessionId = sessionId;
+        this.recipes = saved;
+        this.statusMessage = dishes.length
+          ? `${dishes.length} dish${dishes.length > 1 ? 'es' : ''} loaded — give the wheel a spin!`
+          : 'No matches for that combination — try loosening a filter.';
+        this.wheelRotation = 0;
+        this.isLoading = false;
+      });
+    } catch (err) {
+      console.error('Saving search/candidates to Supabase failed:', err);
+      this.ngZone.run(() => {
+        // Still show the dishes the API actually returned - persistence is a
+        // bonus feature and shouldn't block the wheel from working.
+        this.recipes = dishes;
+        this.statusMessage = dishes.length
+          ? `${dishes.length} dish${dishes.length > 1 ? 'es' : ''} loaded — give the wheel a spin!`
+          : 'No matches for that combination — try loosening a filter.';
+        this.wheelRotation = 0;
+        this.isLoading = false;
+      });
+    }
   }
 
   // "Final round" - swaps the wheel's pool to be your collected history,
@@ -150,8 +180,10 @@ export class DashboardComponent implements OnInit {
 
       this.nowServing = winner.title;
       await this.moodService.markWinner(winner.dbId);
-      this.history.unshift(winner);
-      this.history = this.history.slice(0, 8);
+      this.ngZone.run(() => {
+        this.history.unshift(winner);
+        this.history = this.history.slice(0, 8);
+      });
     }, 3200);
   }
 }
