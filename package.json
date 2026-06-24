@@ -2,12 +2,12 @@
   "name": "mood-food",
   "version": "0.0.0",
   "scripts": {
-    "ng": "ng",
-    "start": "ng serve",
-    "build": "ng build",
-    "watch": "ng build --watch --configuration development",
-    "test": "ng test"
-  },
+  "ng": "ng",
+  "start": "ng serve",
+  "build": "printf 'export const environment = { production: true, supabaseUrl: \"%s\", supabaseKey: \"%s\", spoonacularApiKey: \"%s\", mealDbApiKey: \"%s\" };' \"$supabaseUrl\" \"$supabaseKey\" \"$spoonacularApiKey\" \"$mealDbApiKey\" > src/environments/environment.prod.ts && ng build --configuration production",
+  "watch": "ng build --watch --configuration development",
+  "test": "ng test"
+},
   "private": true,
   "packageManager": "npm@11.5.2",
   "dependencies": {
