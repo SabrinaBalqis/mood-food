@@ -47,6 +47,10 @@ export class DashboardComponent implements OnInit {
   isLoading = false;
   isSpinning = false;
 
+  // Triggers a brief confetti + reveal-pop celebration whenever a winner lands.
+  justSpun = false;
+  confettiPieces = Array.from({ length: 12 });
+
   // Final Round: once you've collected a few winners, spin again among
   // just those to make the actual final call.
   isFinalRound = false;
@@ -170,6 +174,9 @@ export class DashboardComponent implements OnInit {
     setTimeout(async () => {
       this.isSpinning = false;
       const winner = this.recipes[winnerIndex];
+
+      this.justSpun = true;
+      setTimeout(() => (this.justSpun = false), 1200);
 
       if (this.isFinalRound) {
         this.nowServing = winner.title;
