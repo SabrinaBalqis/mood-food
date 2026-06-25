@@ -4,8 +4,8 @@
   "scripts": {
   "ng": "ng",
   "start": "ng serve",
-  "build": "printf 'export const environment = { production: true, supabaseUrl: \"%s\", supabaseKey: \"%s\", spoonacularApiKey: \"%s\", mealDbApiKey: \"1\" };' \"$supabaseUrl\" \"$supabaseKey\" \"$spoonacularApiKey\" > src/environments/environment.prod.ts && ng build --configuration production",
-  "build:prod": "printf 'export const environment = { production: true, supabaseUrl: \"%s\", supabaseKey: \"%s\", spoonacularApiKey: \"%s\", mealDbApiKey: \"%s\" };' \"$supabaseUrl\" \"$supabaseKey\" \"$spoonacularApiKey\" \"$mealDbApiKey\" > src/environments/environment.prod.ts && ng build --configuration production",
+  "build": "printf 'export const environment = { production: false, supabaseUrl: \"%s\", supabaseKey: \"%s\", spoonacularApiKey: \"%s\", mealDbApiKey: \"1\" };' \"$supabaseUrl\" \"$supabaseKey\" \"$spoonacularApiKey\" > src/environments/environment.ts && printf 'export const environment = { production: true, supabaseUrl: \"%s\", supabaseKey: \"%s\", spoonacularApiKey: \"%s\", mealDbApiKey: \"1\" };' \"$supabaseUrl\" \"$supabaseKey\" \"$spoonacularApiKey\" > src/environments/environment.prod.ts && ng build --configuration production",
+  "build:prod": "printf 'export const environment = { production: false, supabaseUrl: \"%s\", supabaseKey: \"%s\", spoonacularApiKey: \"%s\", mealDbApiKey: \"1\" };' \"$supabaseUrl\" \"$supabaseKey\" \"$spoonacularApiKey\" > src/environments/environment.ts && printf 'export const environment = { production: true, supabaseUrl: \"%s\", supabaseKey: \"%s\", spoonacularApiKey: \"%s\", mealDbApiKey: \"1\" };' \"$supabaseUrl\" \"$supabaseKey\" \"$spoonacularApiKey\" > src/environments/environment.prod.ts && ng build --configuration production",
   "watch": "ng build --watch --configuration development",
   "test": "ng test"
 },
